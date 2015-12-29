@@ -61,6 +61,8 @@ I2C_HandleTypeDef hi2c3;
 
 LTDC_HandleTypeDef hltdc;
 
+RTC_HandleTypeDef hrtc;
+
 SPI_HandleTypeDef hspi5;
 
 UART_HandleTypeDef huart5;
@@ -69,6 +71,7 @@ SDRAM_HandleTypeDef hsdram1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
 uint8_t flagButton;
 char str[] = "1.0.1";
 char bufStr[50] = "";
@@ -91,6 +94,7 @@ static void MX_DMA2D_Init(void);
 static void MX_FMC_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_LTDC_Init(void);
+static void MX_RTC_Init(void);
 static void MX_SPI5_Init(void);
 static void MX_UART5_Init(void);
 
@@ -139,6 +143,9 @@ int main(void)
 	
 	BITMAPFILEHEADER bfh;
 	BITMAPINFOHEADER bih;
+	
+	RTC_TimeTypeDef sTime;
+	RTC_DateTypeDef sDate;
 
   /* USER CODE END 1 */
 
@@ -158,6 +165,7 @@ int main(void)
   MX_FMC_Init();
   MX_I2C3_Init();
   MX_LTDC_Init();
+  MX_RTC_Init();
   MX_SPI5_Init();
   MX_UART5_Init();
 
@@ -221,7 +229,7 @@ int main(void)
 			
 			if (mode == 0 || mode == 1){
 				
-				HAL_ADC_Start_DMA(&hadc1, adcData, 5);
+//				HAL_ADC_Start_DMA(&hadc1, adcData, 5);
 				//HAL_ADC_GetValue(&hadc1);
 
 				r = L3GD20_INT_ReadSPI(L3GD20_REG_WHO_AM_I);
@@ -274,23 +282,31 @@ int main(void)
 				
 				DrawClinometer(176, 100, 50, ixyz.X, ixyz.Y);
 				
-				sprintf(bufStr, "%4x; %4x; %4x; %4x; %4x", adcData[0], adcData[1], adcData[2], adcData[3], adcData[4]);
-				//sprintf(bufStr, "%2.1fV %x     ", (3.3*(adcData[0]+adcData[1]+adcData[2]))/0x0fff/3, (adcData[0]+adcData[1]+adcData[2])/3);		
-				GRPH_SetXY(2, 166);
+//				sprintf(bufStr, "%4x; %4x; %4x; %4x; %4x", adcData[0], adcData[1], adcData[2], adcData[3], adcData[4]);
+//				//sprintf(bufStr, "%2.1fV %x     ", (3.3*(adcData[0]+adcData[1]+adcData[2]))/0x0fff/3, (adcData[0]+adcData[1]+adcData[2])/3);		
+//				GRPH_SetXY(2, 166);
+//				GRPH_Puts(bufStr);
+//		
+//				//sprintf(bufStr, "%4x; %4x; %4x; %4x; %4x", adcData[0], adcData[1], adcData[2], adcData[3], adcData[4]);
+//				sprintf(bufStr, "%2.1fV %2.1fV     ", (3.3*(adcData[0]+adcData[1]+adcData[2]))/0x0fff/3, (3.3*(adcData[3]+adcData[4]))/0x0fff/2);		
+//				GRPH_SetXY(2, 178);
+//				GRPH_Puts(bufStr);
+//		
+//				if (adcData[0]> 0x500) clV = GRPH_COLOR_GREEN;
+//				else  clV = GRPH_COLOR_RED;
+//				valV = (adcData[0]+adcData[1]+adcData[2])/0x0f/3;			
+//				DrawBattery(220, 40, 10, valV, tmpV, clV);
+//				tmpV = valV;
+				
+				HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+				HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+				
+				sprintf(bufStr, "%04d%02d%02d %02d:%02d:%02d ", sDate.Year, sDate.Month, sDate.Date,
+				 sTime.Hours, sTime.Minutes, sTime.Seconds);		
+				GRPH_SetXY(2, 190);
 				GRPH_Puts(bufStr);
-		
-				//sprintf(bufStr, "%4x; %4x; %4x; %4x; %4x", adcData[0], adcData[1], adcData[2], adcData[3], adcData[4]);
-				sprintf(bufStr, "%2.1fV %2.1fV     ", (3.3*(adcData[0]+adcData[1]+adcData[2]))/0x0fff/3, (3.3*(adcData[3]+adcData[4]))/0x0fff/2);		
-				GRPH_SetXY(2, 178);
-				GRPH_Puts(bufStr);
-		
-				if (adcData[0]> 0x500) clV = GRPH_COLOR_GREEN;
-				else  clV = GRPH_COLOR_RED;
-				valV = (adcData[0]+adcData[1]+adcData[2])/0x0f/3;			
-				DrawBattery(220, 40, 10, valV, tmpV, clV);
-				tmpV = valV;
 
-				HAL_ADC_Stop_DMA(&hadc1);
+//				HAL_ADC_Stop_DMA(&hadc1);
 					
 				
 				if (tosave == 1){
@@ -346,11 +362,11 @@ int main(void)
 					}
 					if (fres == FR_OK) {
 						sprintf(bufStr, "Write OK   ");
-						GRPH_SetXY(2, 190);
+						GRPH_SetXY(2, 205);
 						GRPH_Puts(bufStr);
 					}else{
 						sprintf(bufStr, "Error:  %u ", fres);
-						GRPH_SetXY(2, 190);
+						GRPH_SetXY(2, 205);
 						GRPH_Puts(bufStr);
 					}
 					//fres = img_bmp_save();
@@ -393,12 +409,12 @@ int main(void)
 			}
 			if (fres == FR_OK) {
 				sprintf(bufStr, "Read OK  ");
-				GRPH_SetXY(15, 190);
+				GRPH_SetXY(2, 205);
 				GRPH_Puts(bufStr);
 					
 			}else{
 				sprintf(bufStr, "Error:  %u ", fres);
-				GRPH_SetXY(15, 190);
+				GRPH_SetXY(2, 205);
 				GRPH_Puts(bufStr);
 			}
 		}
@@ -479,8 +495,9 @@ void SystemClock_Config(void)
 
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 8;
@@ -497,16 +514,19 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
   HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
 
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_RTC;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 5;
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_4;
+  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
   HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
 
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
+  /* SysTick_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
 /* ADC1 init function */
@@ -525,7 +545,7 @@ void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 5;
+  hadc1.Init.NbrOfConversion = 4;
   hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = EOC_SINGLE_CONV;
   HAL_ADC_Init(&hadc1);
@@ -534,7 +554,7 @@ void MX_ADC1_Init(void)
     */
   sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
@@ -544,18 +564,13 @@ void MX_ADC1_Init(void)
 
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
     */
-  sConfig.Rank = 3;
-  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-
-		/**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
-    */
   sConfig.Channel = ADC_CHANNEL_VBAT;
-  sConfig.Rank = 4;
+  sConfig.Rank = 3;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
     */
-  sConfig.Rank = 5;
+  sConfig.Rank = 4;
   HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
 }
@@ -647,6 +662,44 @@ void MX_LTDC_Init(void)
   pLayerCfg1.Backcolor.Green = 0;
   pLayerCfg1.Backcolor.Red = 0;
   HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg1, 1);
+
+}
+
+/* RTC init function */
+void MX_RTC_Init(void)
+{
+
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+
+    /**Initialize RTC and set the Time and Date 
+    */
+  hrtc.Instance = RTC;
+  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+  hrtc.Init.AsynchPrediv = 127;
+  hrtc.Init.SynchPrediv = 255;
+  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+  HAL_RTC_Init(&hrtc);
+
+  sTime.Hours = 12;
+  sTime.Minutes = 0;
+  sTime.Seconds = 0;
+  sTime.TimeFormat = RTC_HOURFORMAT12_AM;
+  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  HAL_RTC_SetTime(&hrtc, &sTime, FORMAT_BIN);
+
+  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+  sDate.Month = RTC_MONTH_DECEMBER;
+  sDate.Date = 0x1E;
+  sDate.Year = 0x0F;
+  HAL_RTC_SetDate(&hrtc, &sDate, FORMAT_BIN);
+
+    /**Enable the TimeStamp 
+    */
+  HAL_RTCEx_SetTimeStamp(&hrtc, RTC_TIMESTAMPEDGE_RISING, RTC_TIMESTAMPPIN_PC13);
 
 }
 
@@ -744,9 +797,9 @@ void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct;
 
   /* GPIO Ports Clock Enable */
+  __GPIOC_CLK_ENABLE();
   __GPIOF_CLK_ENABLE();
   __GPIOH_CLK_ENABLE();
-  __GPIOC_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();
   __GPIOB_CLK_ENABLE();
   __GPIOG_CLK_ENABLE();
@@ -772,13 +825,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PF6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);

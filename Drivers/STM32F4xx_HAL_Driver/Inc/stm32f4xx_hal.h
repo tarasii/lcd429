@@ -181,8 +181,7 @@
 /**
   * @}
   */
-extern __IO uint32_t TM_Time2;
-																								
+
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup HAL_Exported_Functions
   * @{

@@ -60,6 +60,7 @@ Temporary Items
 *.lst
 *.axf
 *.iex
+*.tmp
 /MDK-ARM/lcd429 Configuration/*
 /MDK-ARM/lcd429 Configuration/
 

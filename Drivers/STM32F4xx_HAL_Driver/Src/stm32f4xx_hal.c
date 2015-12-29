@@ -311,7 +311,6 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 __weak void HAL_IncTick(void)
 {
   uwTick++;
-	if (TM_Time2) TM_Time2--;
 }
 
 /**
