@@ -45,3 +45,21 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+*.S
+*.crf
+*.o
+*.d
+*.dep
+*.map
+*.sct
+*.lnp
+*.uvguix*
+*.bak
+*.lst
+*.axf
+*.iex
+/MDK-ARM/lcd429 Configuration/*
+/MDK-ARM/lcd429 Configuration/
+
